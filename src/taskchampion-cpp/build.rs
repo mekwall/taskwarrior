@@ -13,9 +13,6 @@ fn main() {
         println!("cargo:rustc-link-arg=/NODEFAULTLIB:LIBCMT");
         println!("cargo:rustc-link-arg=/DEFAULTLIB:LIBCMTD");
 
-        // Set iterator debug level
-        println!("cargo:rustc-cfg=iterator_debug_level=2");
-
         // Set environment variable to force Debug runtime
         println!("cargo:rustc-env=_ITERATOR_DEBUG_LEVEL=2");
     }
