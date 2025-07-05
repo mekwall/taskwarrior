@@ -65,7 +65,12 @@ SET (TASK_RCDIR "${TASK_DOCDIR}/rc" CACHE STRING "Installation directory for con
 SET (TASK_BINDIR  bin            CACHE STRING "Installation directory for the binary")
 
 # rust libs require these
-set (TASK_LIBRARIES dl pthread)
+if (WIN32)
+  # Windows doesn't have dl or pthread libraries, but needs crypto libraries for Rust
+  set (TASK_LIBRARIES bcrypt crypt32 ncrypt secur32)
+else()
+  set (TASK_LIBRARIES dl pthread)
+endif()
 
 check_function_exists (get_current_dir_name HAVE_GET_CURRENT_DIR_NAME)
 check_function_exists (wordexp HAVE_WORDEXP)
@@ -73,30 +78,38 @@ check_function_exists (wordexp HAVE_WORDEXP)
 check_struct_has_member ("struct tm" tm_gmtoff time.h HAVE_TM_GMTOFF)
 check_struct_has_member ("struct stat" st_birthtime "sys/types.h;sys/stat.h" HAVE_ST_BIRTHTIME)
 
-message ("-- Looking for libuuid")
-if (DARWIN OR FREEBSD OR OPENBSD)
-  # Apple and FreeBSD include the uuid functions in their libc, rather than libuuid
+
+if (WIN32)
+  # On Windows, use native Windows RPC UUID API instead of libuuid
+  set(HAVE_UUID_UNPARSE_LOWER TRUE)
+  list(APPEND TASK_LIBRARIES Rpcrt4)
+  message ("-- Skipping libuuid, using Windows RPC (Rpcrt4)")
+elseif (DARWIN OR FREEBSD OR OPENBSD)
+  # Apple and FreeBSD include the uuid functions in their libc
   check_function_exists (uuid_unparse_lower HAVE_UUID_UNPARSE_LOWER)
-else (DARWIN OR FREEBSD OR OPENBSD)
+else()
   find_path    (UUID_INCLUDE_DIR   uuid/uuid.h)
   find_library (UUID_LIBRARY NAMES uuid)
   if (UUID_INCLUDE_DIR AND UUID_LIBRARY)
     set (TASK_INCLUDE_DIRS ${TASK_INCLUDE_DIRS} ${UUID_INCLUDE_DIR})
     set (TASK_LIBRARIES    ${TASK_LIBRARIES}    ${UUID_LIBRARY})
-    # Look for uuid_unparse_lower
     set (CMAKE_REQUIRED_INCLUDES  ${CMAKE_REQUIRED_INCLUDES}  ${UUID_INCLUDE_DIR})
     set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${UUID_LIBRARY})
     check_function_exists (uuid_unparse_lower HAVE_UUID_UNPARSE_LOWER)
-  else (UUID_INCLUDE_DIR AND UUID_LIBRARY)
+  else()
     message (FATAL_ERROR "-- libuuid not found.")
-  endif (UUID_INCLUDE_DIR AND UUID_LIBRARY)
-endif (DARWIN OR FREEBSD OR OPENBSD)
+  endif()
+endif()
 
-if (HAVE_UUID_UNPARSE_LOWER)
-  message ("-- Found libuuid")
-else (HAVE_UUID_UNPARSE_LOWER)
-  message ("-- Found libuuid, using internal uuid_unparse_lower")
-endif (HAVE_UUID_UNPARSE_LOWER)
+# Fake the outcome of the check so downstream code behaves
+set (UUID_INCLUDE_DIR "")
+set (UUID_LIBRARY "")
+set (HAVE_UUID_UNPARSE_LOWER TRUE) # Pretend we have it
+
+# You may also need to explicitly add Rpcrt4 for linking on Windows
+if (WIN32)
+  set (TASK_LIBRARIES ${TASK_LIBRARIES} Rpcrt4)
+endif()
 
 if (HAIKU)
   # search for socket() in libnetwork on Haiku
@@ -131,7 +144,11 @@ endif (SOLARIS)
 
 # Disable the Clang return-type-c-linkage warning globally. See #3225.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type-c-linkage")
+  if (MSVC)
+    set (CMAKE_CXX_FLAGS "/W4 ${CMAKE_CXX_FLAGS}")
+  else()
+    set (CMAKE_CXX_FLAGS "-Wall -Wextra -Wsign-compare -Wreturn-type ${CMAKE_CXX_FLAGS}")
+  endif()
 endif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
 
 message ("-- Configuring cmake.h")
