@@ -5,7 +5,7 @@ fn main() {
     // Check if we're building in debug mode
     let profile = env::var("PROFILE").unwrap_or_else(|_| "release".to_string());
 
-    if profile == "dev" {
+    if profile == "debug" {
         // Force Debug MSVC runtime for Debug builds
         println!("cargo:rustc-link-arg=/MDd");
         println!("cargo:rustc-link-arg=/NODEFAULTLIB:MSVCRT");
