@@ -20,7 +20,8 @@ corrosion_import_crate(
   MANIFEST_PATH "${CMAKE_SOURCE_DIR}/Cargo.toml"
   LOCKED
   CRATES "taskchampion-lib"
-  FEATURES "${TASKCHAMPION_FEATURES}")
+  FEATURES "${TASKCHAMPION_FEATURES}"
+)
 
 # Set up `taskchampion-cpp`, the C++ side of the bridge.
 corrosion_add_cxxbridge(taskchampion-cpp
