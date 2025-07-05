@@ -5,7 +5,7 @@ include (CheckCXXCompilerFlag)
 
 CHECK_CXX_COMPILER_FLAG("-std=c++17"   _HAS_CXX17)
 
-if (_HAS_CXX1 OR WIN32)
+if (_HAS_CXX17 OR WIN32)
   set (CMAKE_CXX_STANDARD 17)
   set (CMAKE_CXX_EXTENSIONS OFF)
 else()
