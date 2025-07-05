@@ -26,6 +26,7 @@ corrosion_import_crate(
   LOCKED
   CRATES "taskchampion-lib"
   FEATURES "${TASKCHAMPION_FEATURES}"
+  PROFILE "dev"
 )
 
 # Set up `taskchampion-cpp`, the C++ side of the bridge.
