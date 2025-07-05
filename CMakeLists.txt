@@ -106,8 +106,10 @@ set (UUID_INCLUDE_DIR "")
 set (UUID_LIBRARY "")
 set (HAVE_UUID_UNPARSE_LOWER TRUE) # Pretend we have it
 
-# You may also need to explicitly add Rpcrt4 for linking
-set (TASK_LIBRARIES ${TASK_LIBRARIES} Rpcrt4)
+# You may also need to explicitly add Rpcrt4 for linking on Windows
+if (WIN32)
+  set (TASK_LIBRARIES ${TASK_LIBRARIES} Rpcrt4)
+endif()
 
 if (HAIKU)
   # search for socket() in libnetwork on Haiku
